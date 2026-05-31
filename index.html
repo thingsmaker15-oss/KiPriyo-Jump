@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temple Jumper - Character Select</title>
+    <style>
+        /* --- CSS for Styling --- */
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #2c3e50; 
+            overflow: hidden;
+            font-family: sans-serif;
+        }
+
+        #game-container {
+            width: 800px;
+            height: 400px;
+            position: relative;
+            background-image: url('assets/bg.png'); /* Add your background here */
+            background-color: #87CEEB; /* Fallback sky color */
+            background-size: cover;
+            background-position: bottom;
+            border-bottom: 20px solid #4a4a4a; 
+            overflow: hidden;
+        }
+
+        /* --- HOME SCREEN OVERLAY --- */
+        #home-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100; /* Stays on top of everything */
+        }
+
+        #home-screen h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            color: #f1c40f;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .char-btn {
+            padding: 15px 30px;
+            margin: 15px;
+            font-size: 1.2em;
+            cursor: pointer;
+            background-color: #f1c40f;
+            color: black;
+            border: 4px solid white;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: transform 0.1s;
+        }
+
+        .char-btn:hover {
+            transform: scale(1.1);
+            background-color: #f39c12;
+        }
+
+        /* --- GAME OBJECTS --- */
+        #player {
+            width: 32px;
+            height: 64px; /* Taller character height */
+            position: absolute;
+            bottom: 20px; 
+            left: 50px;
+            z-index: 10;
+            background-size: contain;
+            background-repeat: no-repeat;
+            transition: transform 0.1s; /* For flipping left/right */
+        }
+
+        #enemy {
+            width: 40px;
+            height: 40px; 
+            position: absolute;
+            bottom: 20px;
+            left: 750px;
+            z-index: 9;
+            background-image: url('assets/notebook.png'); /* Add notebook asset here */
+            background-color: transparent; 
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        /* Fallback enemy CSS if image is missing */
+        #enemy::before {
+            content: '📚';
+            font-size: 30px;
+            position: absolute;
+            top: 5px; left: 5px;
+        }
+
+        .block {
+            width: 40px;
+            height: 40px;
+            position: absolute;
+            background-image: url('assets/brick.png'); /* Add brick asset here */
+            background-color: #a0522d; /* Fallback color */
+            background-size: cover;
+            border: 2px solid #6b4329;
+            box-shadow: 2px 2px 0 #6b4329;
+        }
+
+        .coin {
+            width: 20px;
+            height: 20px;
+            position: absolute;
+            background-color: gold;
+            border-radius: 50%;
+            border: 2px solid orange;
+            text-align: center;
+            line-height: 20px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #d1a700;
+        }
+/* --- BASE CLASSES (Handles logic, sizing, and shadows) --- */
+.platform {
+    height: 30px; 
+    position: absolute;
+    background-size: cover; 
+    border: 2px solid #6b4329;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+}
+
+.prop {
+    position: absolute;
+    background-size: contain;
+    background-repeat: no-repeat;
+    z-index: 5; /* Keeps them in the background */
+}
+
+/* --- MODIFIER CLASSES (Handles the actual images) --- */
+.platform-1 { background-image: url('assets/platform_1.png'); }
+.platform-2 { background-image: url('assets/platform_2.png'); }
+
+.pillar-1 { background-image: url('assets/pillar_1.png'); }
+.pillar-2 { background-image: url('assets/pillar_2.png'); }
+        #score {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            text-shadow: 1px 1px 0 black;
+            font-size: 1.2em;
+            font-weight: bold;
+            z-index: 20;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div class="prop pillar-1" style="width: 60px; height: 200px; left: 150px; bottom: 20px;"></div>
+<div class="prop pillar-2" style="width: 80px; height: 160px; left: 450px; bottom: 20px;"></div>
+
+<div class="block" style="left: 100px; bottom: 20px;"></div>
+
+<div class="platform platform-1" style="width: 150px; left: 250px; bottom: 120px;"></div>
+<div class="coin" data-value="1" style="left: 310px; bottom: 160px;"></div>
+
+<div class="platform platform-2" style="width: 120px; left: 500px; bottom: 220px;"></div>
+<div class="coin" data-value="5" style="left: 550px; bottom: 260px;"></div>
+        <div id="home-screen">
+            <h1>TEMPLE RUNNER</h1>
+            <h3>Select Your Character</h3>
+            <div>
+                <button id="btn-lungiman" class="char-btn">Play as Lungiman</button>
+                <button id="btn-chitra" class="char-btn">Play as Chitra</button>
+            </div>
+        </div>
+
+        <div id="player"></div>
+        <div id="enemy"></div> 
+        <div id="score">Score: 0</div>
+        
+        <div class="prop" style="width: 60px; height: 200px; left: 350px; bottom: 20px; background-image: url('assets/pillar.png');"></div>
+
+<div class="block" style="left: 150px; bottom: 20px;"></div>
+<div class="block" style="left: 190px; bottom: 60px;"></div>
+
+<div class="platform" style="width: 150px; left: 300px; bottom: 120px;"></div>
+<div class="coin" data-value="1" style="left: 360px; bottom: 160px;"></div>
+
+<div class="platform" style="width: 100px; left: 550px; bottom: 200px;"></div>
+<div class="coin" data-value="5" style="left: 590px; bottom: 240px;"></div>
+    </div>
+
+    <script>
+        // --- JavaScript for Game Logic ---
+        const player = document.getElementById('player');
+        const enemy = document.getElementById('enemy');
+        const scoreDisplay = document.getElementById('score');
+        const gameContainer = document.getElementById('game-container');
+        const homeScreen = document.getElementById('home-screen');
+        const coins = document.querySelectorAll('.coin');
+        const blocks = document.querySelectorAll('.block');
+
+        // Player Dimensions for collision
+        const pWidth = 32;
+        const pHeight = 64;
+
+        // --- Physics Variables ---
+        const groundLevel = 20; 
+        let playerX = 50;
+        let playerY = groundLevel;
+
+        let velocityX = 0;
+        let velocityY = 0;
+        const gravity = -0.8;      
+        const jumpPower = 15;      
+        const moveSpeed = 6;       
+        let isGrounded = true;     
+        let score = 0;
+        // --- Audio Assets ---
+const sfxJump = new Audio('assets/jump.wav');
+const sfxCoin = new Audio('assets/coin.wav');
+const sfxDeath = new Audio('assets/gameover.wav');
+
+// Optional: Background Music
+const bgm = new Audio('assets/bgm.mp3');
+bgm.loop = true; // Makes the song loop endlessly
+bgm.volume = 0.5; // Sets volume to 50% so it doesn't overpower the sound effects
+        // Start frozen so the menu works
+        let isGameOver = true; 
+
+        // Enemy Variables
+        let enemyX = 750;
+        let enemySpeed = 3;
+        let enemyDirection = -1; 
+
+        // --- NEW CODE ---
+const allSolids = document.querySelectorAll('.block, .platform'); // Selects both
+
+const blockData = Array.from(allSolids).map(solid => ({
+    left: parseInt(solid.style.left),
+    bottom: parseInt(solid.style.bottom),
+    // Use clientWidth and clientHeight to get the exact size from HTML/CSS
+    right: parseInt(solid.style.left) + solid.clientWidth, 
+    top: parseInt(solid.style.bottom) + solid.clientHeight  
+}));
+        // -- Menu Selection Logic --
+        document.getElementById('btn-lungiman').addEventListener('click', () => {
+            player.style.backgroundImage = "url('assets/player_lungiman.png')";
+            startGame();
+        });
+
+        document.getElementById('btn-chitra').addEventListener('click', () => {
+            player.style.backgroundImage = "url('assets/player_chitra.png')";
+            startGame();
+        });
+
+        // Start music when the game starts
+function startGame() {
+    homeScreen.style.display = 'none'; 
+    isGameOver = false;                
+    spawnRandomObstacles(3); 
+    updateHitboxes();
+    
+    // Start the background music
+    bgm.play(); 
+
+    requestAnimationFrame(updateGame); 
+}
+
+// Inside updateGame(), under Enemy Collision:
+            if (hitEnemyX && hitEnemyY) {
+                isGameOver = true;
+                player.style.opacity = '0.5'; 
+                
+                // Stop music, play death sound
+                bgm.pause();
+                sfxDeath.play();
+                
+                setTimeout(() => alert(`Game Over! Score: ${score}.`), 50);
+                return;
+            }
+
+        // -- Input Handling (Key States)
+        const keys = { right: false, left: false };
+
+        document.addEventListener('keydown', (e) => {
+            if (isGameOver) return; 
+
+            if (e.code === 'ArrowRight') {
+                keys.right = true;
+                player.style.transform = 'scaleX(1)'; // Face Right
+            } else if (e.code === 'ArrowLeft') {
+                keys.left = true;
+                player.style.transform = 'scaleX(-1)'; // Face Left
+            }
+            
+            if (e.code === 'Space' && isGrounded) {
+            velocityY = jumpPower;
+            isGrounded = false;
+            
+            // Play jump sound
+            sfxJump.currentTime = 0; // Rewind to start
+            sfxJump.play();
+        }
+
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'ArrowRight') keys.right = false;
+            if (e.code === 'ArrowLeft') keys.left = false;
+        });
+
+        // --- The Game Loop ---
+        function updateGame() {
+            // --- Animation Variables ---
+let walkFrame = 1;
+let frameCounter = 0;
+const animationSpeed = 5; // Lower number = faster leg movement
+            if (isGameOver) return; 
+
+            /* 1. X-AXIS MOVEMENT & COLLISION */
+            if (keys.right) velocityX = moveSpeed;
+            else if (keys.left) velocityX = -moveSpeed;
+            else velocityX = 0; 
+
+            playerX += velocityX;
+
+            if (playerX < 0) playerX = 0;
+            if (playerX > gameContainer.clientWidth - pWidth) {
+                playerX = gameContainer.clientWidth - pWidth;
+            }
+
+            for (let b of blockData) {
+                if (playerX + pWidth > b.left && playerX < b.right && playerY + pHeight > b.bottom && playerY < b.top) {
+                    if (velocityX > 0) playerX = b.left - pWidth; 
+                    if (velocityX < 0) playerX = b.right;     
+                }
+            }
+
+            /* 2. Y-AXIS MOVEMENT & COLLISION */
+            velocityY += gravity; 
+            playerY += velocityY;
+            isGrounded = false; 
+
+            for (let b of blockData) {
+                if (playerX + pWidth > b.left && playerX < b.right && playerY + pHeight > b.bottom && playerY < b.top) {
+                    if (velocityY < 0) { 
+                        playerY = b.top;
+                        velocityY = 0;
+                        isGrounded = true;
+                    } else if (velocityY > 0) { 
+                        playerY = b.bottom - pHeight;
+                        velocityY = 0;
+                    }
+                }
+            }
+
+            if (playerY <= groundLevel) {
+                playerY = groundLevel;
+                velocityY = 0;
+                isGrounded = true;
+            }
+
+            player.style.left = `${playerX}px`;
+            player.style.bottom = `${playerY}px`;
+            /* -----------------------------------------------------
+               ANIMATION STATE MACHINE
+               ----------------------------------------------------- */
+            // Get the current character prefix (lungiman or chitra)
+            // We deduce this from the current background image to support both characters
+            // The code checks who you selected on the home screen
+const isChitra = player.style.backgroundImage.includes('chitra');
+const charPrefix = isChitra ? 'chitra' : 'lungiman';
+
+// If you chose Chitra, charPrefix becomes "chitra".
+// The code then automatically looks for 'assets/jump_chitra.png'
+player.style.backgroundImage = `url('assets/jump_${charPrefix}.png')`;
+            if (!isGrounded) {
+                // 1. JUMP STATE: If in the air, override everything with the jump pose
+                player.style.backgroundImage = `url('assets/jump_${charPrefix}.png')`;
+            } 
+            else if (velocityX !== 0) {
+                // 2. RUN STATE: If moving horizontally on the ground, cycle the walk frames
+                frameCounter++;
+                if (frameCounter >= animationSpeed) {
+                    walkFrame++; // Move to the next frame
+                    if (walkFrame > 4) walkFrame = 1; // Loop back to frame 1
+                    frameCounter = 0; // Reset counter
+                }
+                player.style.backgroundImage = `url('assets/walk_${walkFrame}_${charPrefix}.png')`;
+            } 
+            else {
+                // 3. IDLE STATE: If standing still on the ground, show the idle pose
+                player.style.backgroundImage = `url('assets/player_${charPrefix}.png')`;
+                walkFrame = 1; // Reset walk cycle for next time they move
+            }
+
+            /* 3. ENEMY & COIN LOGIC */
+            enemyX += enemySpeed * enemyDirection;
+            if (enemyX <= 0 || enemyX >= gameContainer.clientWidth - 40) {
+                enemyDirection *= -1; 
+            }
+            enemy.style.left = `${enemyX}px`;
+
+            const playerRect = player.getBoundingClientRect();
+            const enemyRect = enemy.getBoundingClientRect();
+
+            const hitEnemyX = playerRect.left < enemyRect.right && playerRect.right > enemyRect.left;
+            const hitEnemyY = playerRect.top < enemyRect.bottom && playerRect.bottom > enemyRect.top;
+
+            if (hitEnemyX && hitEnemyY) {
+                isGameOver = true;
+                player.style.opacity = '0.5'; // Visual indicator of death
+                setTimeout(() => alert(`Game Over! You hit the textbooks. Score: ${score}. Refresh to try again.`), 50);
+                return;
+            }
+
+            coins.forEach(coin => {
+                if (coin.style.display === 'none') return;
+                const coinRect = coin.getBoundingClientRect();
+                const hitCoinX = playerRect.left < coinRect.right && playerRect.right > coinRect.left;
+                const hitCoinY = playerRect.top < coinRect.bottom && playerRect.bottom > coinRect.top;
+
+                if (hitCoinX && hitCoinY) {
+                score += parseInt(coin.getAttribute('data-value') || '1');
+                scoreDisplay.textContent = `Score: ${score}`;
+                coin.style.display = 'none'; 
+                
+                // Play coin sound
+                sfxCoin.currentTime = 0;
+                sfxCoin.play();
+            }
+            });
+
+            requestAnimationFrame(updateGame);
+        }
+    </script>
+</body>
+</html>
