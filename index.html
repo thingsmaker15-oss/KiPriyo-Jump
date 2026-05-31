@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Temple Jumper - Character Select</title>
+    <title>KiPriyo Jumper - Character Select</title>
     <style>
         /* --- CSS for Styling --- */
         body {
@@ -140,7 +140,26 @@
     background-repeat: no-repeat;
     z-index: 5; /* Keeps them in the background */
 }
+/* --- RANDOM DECORATIVE OBSTACLES --- */
+.obstacle {
+    position: absolute;
+    bottom: 20px; /* Always spawn on the ground */
+    background-size: contain;
+    background-repeat: no-repeat;
+    z-index: 8;
+}
 
+.obs-pot {
+    width: 30px;
+    height: 30px;
+    background-image: url('assets/pot.png');
+}
+
+.obs-statue {
+    width: 40px;
+    height: 60px;
+    background-image: url('assets/statue.png');
+}
 /* --- MODIFIER CLASSES (Handles the actual images) --- */
 .platform-1 { background-image: url('assets/platform_1.png'); }
 .platform-2 { background-image: url('assets/platform_2.png'); }
@@ -172,7 +191,7 @@
 <div class="platform platform-2" style="width: 120px; left: 500px; bottom: 220px;"></div>
 <div class="coin" data-value="5" style="left: 550px; bottom: 260px;"></div>
         <div id="home-screen">
-            <h1>TEMPLE RUNNER</h1>
+            <h1>KiPriyo Jump</h1>
             <h3>Select Your Character</h3>
             <div>
                 <button id="btn-lungiman" class="char-btn">Play as Lungiman</button>
@@ -242,12 +261,20 @@ bgm.volume = 0.5; // Sets volume to 50% so it doesn't overpower the sound effect
         // --- NEW CODE ---
 const allSolids = document.querySelectorAll('.block, .platform'); // Selects both
 
-const blockData = Array.from(allSolids).map(solid => ({
-    left: parseInt(solid.style.left),
-    bottom: parseInt(solid.style.bottom),
-    // Use clientWidth and clientHeight to get the exact size from HTML/CSS
-    right: parseInt(solid.style.left) + solid.clientWidth, 
-    top: parseInt(solid.style.bottom) + solid.clientHeight  
+// Variable to store our level's solid objects
+let blockData = [];
+
+function updateHitboxes() {
+    // Grab all blocks, platforms, AND our newly spawned obstacles
+    const allSolids = document.querySelectorAll('.block, .platform, .obstacle'); 
+
+    blockData = Array.from(allSolids).map(solid => ({
+        left: parseInt(solid.style.left),
+        bottom: parseInt(solid.style.bottom),
+        right: parseInt(solid.style.left) + solid.clientWidth, 
+        top: parseInt(solid.style.bottom) + solid.clientHeight  
+    }));
+}  
 }));
         // -- Menu Selection Logic --
         document.getElementById('btn-lungiman').addEventListener('click', () => {
@@ -259,12 +286,37 @@ const blockData = Array.from(allSolids).map(solid => ({
             player.style.backgroundImage = "url('assets/player_chitra.png')";
             startGame();
         });
-
+function spawnRandomObstacles(amount) {
+    for (let i = 0; i < amount; i++) {
+        // 1. Create a new div element
+        const obs = document.createElement('div');
+        
+        // 2. Add the base obstacle class
+        obs.classList.add('obstacle');
+        
+        // 3. Randomly decide if it's a pot or a statue (50/50 chance)
+        if (Math.random() > 0.5) {
+            obs.classList.add('obs-pot');
+        } else {
+            obs.classList.add('obs-statue');
+        }
+        
+        // 4. Give it a random X coordinate between 100px and 650px
+        const randomX = Math.floor(Math.random() * 550) + 100;
+        obs.style.left = `${randomX}px`;
+        
+        // 5. Inject it into the game container
+        gameContainer.appendChild(obs);
+    }
+}
         // Start music when the game starts
 function startGame() {
     homeScreen.style.display = 'none'; 
-    isGameOver = false;                
+    isGameOver = false;    
+    // Spawn 3 random obstacles every time the game starts!
     spawnRandomObstacles(3); 
+
+    // We must re-calculate blockData HERE so the engine knows about the newly spawned items
     updateHitboxes();
     
     // Start the background music
